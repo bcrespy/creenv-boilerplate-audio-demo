@@ -24,15 +24,15 @@ import Stats from "@creenv/stats";
 import config from "./config";
 import controls from "./user-controls";
 
+import AudioSourceMicrophone from "@creenv/audio/source/microphone";
+import Stream from "@creenv/audio/stream";
+import AudioAnalyser from "@creenv/audio/analyser";
+
 /**
  * For the sake of the example, the rendering logic will take part in the render file
  * You should aways split a bit your code, it will make the process of identifying mistakes and improving your app easier :)
  */
 import Renderer from "./renderer";
-
-// see at the very end of the file to see this module in action
-import Capture from "@creenv/capture";
-
 
 
 /**
@@ -48,7 +48,7 @@ class MyProject extends Creenv {
    */
   init() {
     // REQUIRED - calls the parent method 
-    super.init();
+    super.init();  
 
     // you can specify a custom framerate (frames/sec) here 
     super.framerate(60);
@@ -66,41 +66,33 @@ class MyProject extends Creenv {
     // we initialize our renderer
     this.renderer = new Renderer();
     this.renderer.init();
+
+    return new Promise(resolve => {
+      this.audioSource = new AudioSourceMicrophone();
+      this.stream = new Stream(this.audioSource);
+      this.analyser = new AudioAnalyser(this.stream);
+      console.log("loaded");
+
+      this.audioSource.load().then(() => {
+        this.stream.init();
+        resolve();
+      });
+    });
   }
 
   /**
-   * This function will be called at each frame, automatically, given the framerate. This is how creenv behaves after the 
-   * bootstrap method is called 
+   * will be called at each frame 
    */
   render() {
     this.stats.begin();
 
-    /**
-     * you can do whatever you want for your rendering process. here, we'll just call the renderer render() method and pass it
-     * the elpased time since last frame deltaT and the elapsed time since the beginning. you can find a list of all the 
-     * accessible variables within creenv by going to the Learning table.
-     */
+    let analysed = this.analyser.analyse(this.deltaT, this.elapsedTime);
+
     this.renderer.render(this.deltaT, this.elapsedTime);
-    console.log(this.elapsedTime);
 
     this.stats.end();
   }
 }
 
-
-/**
- * To start your application, instanciate your project and call its bootstrap() method. The bootstrap method is a final method 
- * that cannot be overwrittent, which handles the correct behavior of the beginning of the rendering process.
- */
 let project = new MyProject();
-//project.bootstrap(); 
-
-
-/**
- * this is the only required line to be able to export your work as a video file. however, you will need to comment the 
- * .bootstrap() method call just below to prevent the regular behaviour of the rendering loop. this is all explained in the 
- * Capture section within the Learning table
- * /!\ capture will look for canvas in options (not the case here), then first canvas with class `creenv`, then first canvas
- */
-
-let capture = new Capture(project);
+project.bootstrap(); 
