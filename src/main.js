@@ -24,9 +24,7 @@ import Stats from "@creenv/stats";
 import config from "./config";
 import controls from "./user-controls";
 
-import AudioSourceMicrophone from "@creenv/audio/source/microphone";
-import Stream from "@creenv/audio/stream";
-import AudioAnalyser from "@creenv/audio/analyser";
+import AudioManager from "@creenv/audio/manager";
 
 /**
  * For the sake of the example, the rendering logic will take part in the render file
@@ -67,16 +65,12 @@ class MyProject extends Creenv {
     this.renderer = new Renderer();
     this.renderer.init();
 
-    return new Promise(resolve => {
-      this.audioSource = new AudioSourceMicrophone();
-      this.stream = new Stream(this.audioSource);
-      this.analyser = new AudioAnalyser(this.stream);
-      console.log("loaded");
+    this.audio = new AudioManager(AudioManager.SOURCE_TYPE.FILE, {
+      filepath: "owl-vision_warhogz.mp3"
+    });
 
-      this.audioSource.load().then(() => {
-        this.stream.init();
-        resolve();
-      });
+    return new Promise(resolve => {
+      this.audio.init().then(resolve);
     });
   }
 
@@ -86,7 +80,7 @@ class MyProject extends Creenv {
   render() {
     this.stats.begin();
 
-    let analysed = this.analyser.analyse(this.deltaT, this.elapsedTime);
+    let analysed = this.audio.getAnalysedAudioData(this.deltaT, this.elapsedTime);
 
     this.renderer.render(this.deltaT, this.elapsedTime);
 
